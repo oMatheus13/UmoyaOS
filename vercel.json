@@ -34,32 +34,32 @@
     { "src": "/pop/(.*)", "dest": "/apps/pop/index.html" },
     {
       "src": "/(.*)",
-      "has": [{ "type": "host", "value": "rastreio.umoya.omatheus.com" }],
+      "has": [{ "type": "host", "value": "rastreio.umoya.ind.br" }],
       "dest": "/apps/rastreio/index.html"
     },
     {
       "src": "/(.*)",
-      "has": [{ "type": "host", "value": "pdv.umoya.omatheus.com" }],
+      "has": [{ "type": "host", "value": "pdv.umoya.ind.br" }],
       "dest": "/apps/pdv/index.html"
     },
     {
       "src": "/(.*)",
-      "has": [{ "type": "host", "value": "ptc.umoya.omatheus.com" }],
+      "has": [{ "type": "host", "value": "ptc.umoya.ind.br" }],
       "dest": "/apps/ptc/index.html"
     },
     {
       "src": "/(.*)",
-      "has": [{ "type": "host", "value": "pas.umoya.omatheus.com" }],
+      "has": [{ "type": "host", "value": "pas.umoya.ind.br" }],
       "dest": "/apps/pas/index.html"
     },
     {
       "src": "/(.*)",
-      "has": [{ "type": "host", "value": "pop.umoya.omatheus.com" }],
+      "has": [{ "type": "host", "value": "pop.umoya.ind.br" }],
       "dest": "/apps/pop/index.html"
     },
     {
       "src": "/(.*)",
-      "has": [{ "type": "host", "value": "erp.umoya.omatheus.com" }],
+      "has": [{ "type": "host", "value": "erp.umoya.ind.br" }],
       "dest": "/apps/erp/index.html"
     },
     { "src": "/(.*)", "dest": "/apps/erp/index.html" }

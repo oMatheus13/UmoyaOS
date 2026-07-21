@@ -77,7 +77,7 @@ const statusLabels: Record<Order['status'], string> = {
 
 const TRACKING_BASE_URL =
   (import.meta.env.VITE_TRACKING_BASE_URL as string | undefined) ||
-  'https://rastreio.umoya.omatheus.com'
+  'https://rastreio.umoya.ind.br'
 
 const buildTrackingLink = (orderCode: string) =>
   `${TRACKING_BASE_URL.replace(/\/+$/, '')}/${orderCode}`
