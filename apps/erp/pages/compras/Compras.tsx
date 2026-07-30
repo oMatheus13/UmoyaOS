@@ -12,7 +12,7 @@ import { useERPData } from '@shared/store/appStore'
 import type { Material, PurchaseRecord } from '@shared/types/erp'
 import type { ImportedNfceData } from '@shared/types/nfce'
 import type { PageIntentAction } from '@shared/types/ui'
-import { getPaymentCashboxId, getPaymentMethodLabel } from '@shared/data/paymentMethods'
+import { getPaymentMethodLabel } from '@shared/data/paymentMethods'
 import { hasCameraSupport, isMobileDevice, resolveDeviceId } from '@shared/utils/device'
 import { formatCurrency, formatDateShort } from '@shared/utils/format'
 import { createId } from '@shared/utils/ids'
@@ -41,6 +41,7 @@ type PurchaseForm = {
   supplierId: string
   notes: string
   items: PurchaseItemForm[]
+  cashboxId: string
 }
 
 type NfceImportItemForm = {
@@ -101,6 +102,7 @@ const Compras = ({ pageIntent, onConsumeIntent, onNavigate }: ComprasProps) => {
     supplierId: '',
     notes: '',
     items: [createMaterialItem()],
+    cashboxId: 'caixa_producao',
   })
   const purchaseFormId = 'compra-form'
   const importFormId = 'nfce-import-form'
@@ -180,6 +182,7 @@ const Compras = ({ pageIntent, onConsumeIntent, onNavigate }: ComprasProps) => {
       supplierId: '',
       notes: '',
       items: materials.length > 0 ? [createMaterialItem()] : [createExtraItem()],
+      cashboxId: 'caixa_producao',
     })
     setIsModalOpen(true)
   }
@@ -903,10 +906,7 @@ const Compras = ({ pageIntent, onConsumeIntent, onNavigate }: ComprasProps) => {
         importData.paymentValue && importData.paymentValue > 0
           ? importData.paymentValue
           : purchaseTotal
-      const cashboxId = getPaymentCashboxId(
-        importData.paymentMethod,
-        data.tabelas?.paymentMethods,
-      )
+      const cashboxId = 'caixa_producao'
       const noteLabel = importData.noteNumber ? `NFC-e ${importData.noteNumber}` : 'NFC-e'
       const paymentLabel = importData.paymentMethod
         ? ` · ${getPaymentMethodLabel(
@@ -1131,7 +1131,7 @@ const Compras = ({ pageIntent, onConsumeIntent, onNavigate }: ComprasProps) => {
         amount: totalAmount,
         category: 'Compras',
         createdAt,
-        cashboxId: 'caixa_operacional',
+        cashboxId: form.cashboxId || 'caixa_producao',
       },
     ]
 
@@ -2093,17 +2093,39 @@ const Compras = ({ pageIntent, onConsumeIntent, onNavigate }: ComprasProps) => {
             )
           })}
 
-          <div className="modal__group">
-            <label className="modal__label" htmlFor="purchase-notes">
-              Observacoes
-            </label>
-            <textarea
-              id="purchase-notes"
-              className="modal__input modal__textarea"
-              value={form.notes}
-              onChange={(event) => updateForm({ notes: event.target.value })}
-              placeholder="Detalhes adicionais da compra"
-            />
+          <div className="modal__row">
+            <div className="modal__group">
+              <label className="modal__label" htmlFor="purchase-cashbox">
+                Debitar de qual Caixa?
+              </label>
+              <select
+                id="purchase-cashbox"
+                className="modal__input"
+                value={form.cashboxId}
+                onChange={(event) => updateForm({ cashboxId: event.target.value })}
+              >
+                <option value="caixa_producao">Caixa de Producao (Padrao)</option>
+                <option value="caixa_lucro">Caixa de Lucro</option>
+                {data.caixas?.map((c) => (
+                  <option key={c.id} value={c.id}>
+                    {c.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div className="modal__group">
+              <label className="modal__label" htmlFor="purchase-notes">
+                Observacoes
+              </label>
+              <textarea
+                id="purchase-notes"
+                className="modal__input modal__textarea"
+                style={{ minHeight: '44px' }}
+                value={form.notes}
+                onChange={(event) => updateForm({ notes: event.target.value })}
+                placeholder="Detalhes adicionais"
+              />
+            </div>
           </div>
 
           <div className="summary">

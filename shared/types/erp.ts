@@ -521,6 +521,16 @@ export type FinanceEntry = {
 export type Cashbox = {
   id: UUID
   name: string
+  description?: string
+  allocationPercent?: number
+  maxTarget?: number
+  minPercent?: number
+  idealPercent?: number
+  isProfitBox?: boolean
+  isProductionBox?: boolean
+  isReversalBox?: boolean
+  color?: string
+  active?: boolean
 }
 
 export type CashDailyCheck = {
@@ -684,7 +694,9 @@ export type EmployeePayment = {
   status: EmployeePaymentStatus
   method?: string
   cashboxId?: UUID
+  extrasCashboxId?: UUID
   financeEntryId?: UUID
+  extrasFinanceEntryId?: UUID
   createdAt: string
   paidAt?: string
   notes?: string
@@ -765,6 +777,7 @@ export type ERPData = {
   manutencoes: MaintenanceLog[]
   financeiro: FinanceEntry[]
   caixas: Cashbox[]
+  physicalCashBalance?: number
   conferenciasCaixaFisico: CashDailyCheck[]
   pdvCaixas: PdvCashSession[]
   pdvMovimentacoes: PdvCashMovement[]

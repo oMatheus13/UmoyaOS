@@ -33,12 +33,13 @@ export const DEFAULT_LEVELS: EmployeeLevel[] = [
 ]
 
 export const DEFAULT_CASHBOXES: Cashbox[] = [
-  { id: 'caixa_bancario', name: 'Caixa Bancario' },
-  { id: 'caixa_fisico', name: 'Caixa Fisico' },
-  { id: 'caixa_operacional', name: 'Caixa Operacional' },
-  { id: 'caixa_impostos', name: 'Caixa Impostos' },
-  { id: 'caixa_reserva', name: 'Caixa Reserva' },
-  { id: 'caixa_socios', name: 'Caixa Retirada dos Socios' },
+  {
+    id: 'caixa_producao',
+    name: 'Caixa de Produção',
+    description: 'Caixa automático para custo de matérias-primas e produção',
+    isProductionBox: true,
+    active: true,
+  },
 ]
 
 export const DEFAULT_COMPANY = {

@@ -9,6 +9,7 @@ import { useERPData } from '@shared/store/appStore'
 import QuickNotice from '@shared/components/QuickNotice'
 import type { EmployeePayment, EmployeePaymentStatus } from '@shared/types/erp'
 import { formatCurrency, formatDateShort } from '@shared/utils/format'
+import { PAYMENT_METHODS } from '@shared/data/paymentMethods'
 import { createId } from '@shared/utils/ids'
 
 type PaymentForm = {
@@ -21,6 +22,7 @@ type PaymentForm = {
   status: EmployeePaymentStatus
   method: string
   cashboxId: string
+  extrasCashboxId: string
   notes: string
 }
 
@@ -49,7 +51,8 @@ const createEmptyForm = (): PaymentForm => {
     discounts: 0,
     status: 'aberto',
     method: 'a_definir',
-    cashboxId: '',
+    cashboxId: 'caixa_producao',
+    extrasCashboxId: 'caixa_lucro',
     notes: '',
   }
 }
@@ -111,7 +114,8 @@ const RhPagamentos = () => {
       discounts: entry.discounts,
       status: entry.status,
       method: entry.method ?? 'a_definir',
-      cashboxId: entry.cashboxId ?? '',
+      cashboxId: entry.cashboxId ?? 'caixa_producao',
+      extrasCashboxId: entry.extrasCashboxId ?? 'caixa_lucro',
       notes: entry.notes ?? '',
     })
     setIsModalOpen(true)
@@ -410,25 +414,41 @@ const RhPagamentos = () => {
           </div>
 
           {form.status === 'pago' && (
-            <div className="modal__group">
-              <label className="modal__label" htmlFor="pay-cashbox">
-                Caixa
-              </label>
-              <select
-                id="pay-cashbox"
-                className="modal__input"
-                value={form.cashboxId}
-                onChange={(event) =>
-                  setForm((prev) => ({ ...prev, cashboxId: event.target.value }))
-                }
-              >
-                <option value="">Selecione o caixa</option>
-                {cashboxes.map((cashbox) => (
-                  <option key={cashbox.id} value={cashbox.id}>
-                    {cashbox.name}
-                  </option>
-                ))}
-              </select>
+            <div className="modal__row">
+              <div className="modal__group">
+                <label className="modal__label" htmlFor="pay-cashbox">
+                  Caixa Base (Salario)
+                </label>
+                <select
+                  id="pay-cashbox"
+                  className="modal__input"
+                  value={form.cashboxId}
+                  onChange={(event) => setForm((prev) => ({ ...prev, cashboxId: event.target.value }))}
+                >
+                  <option value="caixa_producao">Caixa de Producao</option>
+                  <option value="caixa_lucro">Caixa de Lucro</option>
+                  {cashboxes.filter(c => !c.isProductionBox && !c.isProfitBox).map((cashbox) => (
+                    <option key={cashbox.id} value={cashbox.id}>{cashbox.name}</option>
+                  ))}
+                </select>
+              </div>
+              <div className="modal__group">
+                <label className="modal__label" htmlFor="pay-extras-cashbox">
+                  Caixa de Extras (Bonus)
+                </label>
+                <select
+                  id="pay-extras-cashbox"
+                  className="modal__input"
+                  value={form.extrasCashboxId}
+                  onChange={(event) => setForm((prev) => ({ ...prev, extrasCashboxId: event.target.value }))}
+                >
+                  <option value="caixa_lucro">Caixa de Lucro</option>
+                  <option value="caixa_producao">Caixa de Producao</option>
+                  {cashboxes.filter(c => !c.isProductionBox && !c.isProfitBox).map((cashbox) => (
+                    <option key={cashbox.id} value={cashbox.id}>{cashbox.name}</option>
+                  ))}
+                </select>
+              </div>
             </div>
           )}
 
@@ -510,14 +530,16 @@ const RhPagamentos = () => {
               <label className="modal__label" htmlFor="pay-method">
                 Metodo
               </label>
-              <input
+              <select
                 id="pay-method"
                 className="modal__input"
-                type="text"
                 value={form.method}
                 onChange={(event) => setForm((prev) => ({ ...prev, method: event.target.value }))}
-                placeholder="Pix, dinheiro, transferencia"
-              />
+              >
+                {PAYMENT_METHODS.map((pm) => (
+                  <option key={pm.id} value={pm.id}>{pm.label}</option>
+                ))}
+              </select>
             </div>
             <div className="modal__group">
               <label className="modal__label">Total</label>

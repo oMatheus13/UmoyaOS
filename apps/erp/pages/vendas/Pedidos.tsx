@@ -37,6 +37,7 @@ import {
 } from '@shared/utils/sales'
 import { findStockItem, findStockItemIndex } from '@shared/utils/stockItems'
 import { getProductUnitLabel } from '@shared/utils/units'
+import { distributeOrderPayment } from '@shared/utils/financeDistribution'
 
 type OrderItemForm = {
   productId: string
@@ -668,10 +669,6 @@ const Pedidos = ({ openOrderId, onConsumeOpen }: PedidosProps) => {
       payload.pedidos = [...payload.pedidos, nextOrder]
     }
 
-    const cashboxId = getPaymentCashboxId(
-      nextOrder.paymentMethod,
-      data.tabelas?.paymentMethods,
-    )
     const nextPayments = nextOrder.payments ?? []
     const previousPayments = previousOrder?.payments ?? []
 
@@ -683,23 +680,67 @@ const Pedidos = ({ openOrderId, onConsumeOpen }: PedidosProps) => {
       const paymentAdjustmentDescription = `Ajuste recebimento pedido ${orderLabel}`
       const paymentReversalDescription = `Estorno recebimento pedido ${orderLabel}`
       const paymentEntries: typeof payload.financeiro = []
+
+      const currentBalances = new Map<string, number>()
+      payload.caixas.forEach((box) => currentBalances.set(box.id, 0))
+      payload.financeiro.forEach((entry) => {
+        const current = currentBalances.get(entry.cashboxId) ?? 0
+        if (entry.type === 'entrada') currentBalances.set(entry.cashboxId, current + entry.amount)
+        if (entry.type === 'saida') currentBalances.set(entry.cashboxId, current - entry.amount)
+        if (entry.type === 'transferencia') {
+          currentBalances.set(entry.cashboxId, current - entry.amount)
+          if (entry.transferToId) {
+            const target = currentBalances.get(entry.transferToId) ?? 0
+            currentBalances.set(entry.transferToId, target + entry.amount)
+          }
+        }
+      })
+
+      const reversalBox = payload.caixas.find((c) => c.isReversalBox)
+      const profitBox = payload.caixas.find((c) => c.isProfitBox || c.id === 'caixa_lucro')
+      const fallbackBoxId = reversalBox?.id ?? profitBox?.id ?? 'caixa_producao'
+
+      const isPhysicalCash = getPaymentCashboxId(nextOrder.paymentMethod, data.tabelas?.paymentMethods) === 'caixa_fisico'
+
       const pushPaymentEntry = (
         amount: number,
         type: 'entrada' | 'saida',
         description: string,
         receivedAt: string,
       ) => {
-        if (!Number.isFinite(amount) || amount <= 0) {
-          return
+        if (!Number.isFinite(amount) || amount <= 0) return
+
+        if (isPhysicalCash) {
+          payload.physicalCashBalance = Math.max(0, (payload.physicalCashBalance ?? 0) + (type === 'entrada' ? amount : -amount))
         }
-        paymentEntries.push({
-          id: createId(),
-          type,
-          description,
-          amount,
-          createdAt: receivedAt || new Date().toISOString().slice(0, 10),
-          cashboxId,
-        })
+
+        if (type === 'entrada') {
+          const distributed = distributeOrderPayment({
+            paymentAmount: amount,
+            orderTotal: nextOrder.total,
+            orderProductionCost: estimatedCost,
+            cashboxes: payload.caixas,
+            currentBalances,
+            description,
+            paymentDate: receivedAt || new Date().toISOString().slice(0, 10),
+          })
+          
+          paymentEntries.push(...distributed)
+          
+          distributed.forEach(e => {
+            const current = currentBalances.get(e.cashboxId) ?? 0
+            currentBalances.set(e.cashboxId, current + e.amount)
+          })
+        } else {
+          paymentEntries.push({
+            id: createId(),
+            type,
+            description,
+            amount,
+            createdAt: receivedAt || new Date().toISOString().slice(0, 10),
+            cashboxId: fallbackBoxId,
+          })
+        }
       }
 
       nextPayments.forEach((payment) => {
@@ -747,16 +788,37 @@ const Pedidos = ({ openOrderId, onConsumeOpen }: PedidosProps) => {
         },
       ]
       if (!hasPayments) {
+        const currentBalances = new Map<string, number>()
+        payload.caixas.forEach((box) => currentBalances.set(box.id, 0))
+        payload.financeiro.forEach((entry) => {
+          const current = currentBalances.get(entry.cashboxId) ?? 0
+          if (entry.type === 'entrada') currentBalances.set(entry.cashboxId, current + entry.amount)
+          if (entry.type === 'saida') currentBalances.set(entry.cashboxId, current - entry.amount)
+          if (entry.type === 'transferencia') {
+            currentBalances.set(entry.cashboxId, current - entry.amount)
+            if (entry.transferToId) {
+              const target = currentBalances.get(entry.transferToId) ?? 0
+              currentBalances.set(entry.transferToId, target + entry.amount)
+            }
+          }
+        })
+        const distributed = distributeOrderPayment({
+            paymentAmount: nextOrder.total,
+            orderTotal: nextOrder.total,
+            orderProductionCost: estimatedCost,
+            cashboxes: payload.caixas,
+            currentBalances,
+            description: `Pedido ${nextOrder.id.slice(0, 8)}`,
+            paymentDate: new Date().toISOString(),
+        })
+        
+        if (getPaymentCashboxId(nextOrder.paymentMethod, data.tabelas?.paymentMethods) === 'caixa_fisico') {
+          payload.physicalCashBalance = (payload.physicalCashBalance ?? 0) + nextOrder.total
+        }
+
         payload.financeiro = [
           ...payload.financeiro,
-          {
-            id: createId(),
-            type: 'entrada',
-            description: `Pedido ${nextOrder.id.slice(0, 8)}`,
-            amount: nextOrder.total,
-            createdAt: new Date().toISOString(),
-            cashboxId,
-          },
+          ...distributed
         ]
       }
     }

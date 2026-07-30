@@ -1,4 +1,4 @@
-import type { Material, Product, ProductVariant } from '../types/erp'
+import type { Material, Order, Product, ProductVariant } from '../types/erp'
 import { convertUsageToPurchaseQuantity, getDefaultUsageUnit } from './materialUsage'
 
 type PricingItem = {
@@ -228,4 +228,32 @@ export const getMaxDiscountSummary = (items: PricingItem[], materials?: Material
     maxDiscountPercent: safePercent,
     maxDiscountValue: subtotal * (safePercent / 100),
   }
+}
+
+export const calculateOrderProductionCost = (
+  order: Order,
+  products: Product[],
+  materials: Material[],
+) => {
+  if (!order || !order.items || order.items.length === 0) {
+    return 0
+  }
+  const productMap = new Map(products.map((p) => [p.id, p]))
+
+  return order.items.reduce((acc, item) => {
+    const product = productMap.get(item.productId)
+    if (!product) {
+      return acc
+    }
+    const variant = item.variantId
+      ? product.variants?.find((v) => v.id === item.variantId)
+      : undefined
+    const unitCost = getBaseCost(product, variant, {
+      materials,
+      customLength: item.customLength,
+      customWidth: item.customWidth,
+    })
+    const qty = typeof item.quantity === 'number' && Number.isFinite(item.quantity) ? item.quantity : 1
+    return acc + unitCost * qty
+  }, 0)
 }

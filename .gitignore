@@ -45,3 +45,4 @@ secrets.env
 *.crt
 *.p12
 *.jks
+core.*

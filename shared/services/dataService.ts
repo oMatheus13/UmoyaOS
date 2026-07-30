@@ -1063,11 +1063,12 @@ const normalizeData = (data: ERPData) => {
   const financeiro = ensureArray(data.financeiro, []).map((entry) => {
     if (!entry.cashboxId) {
       changed = true
-      return { ...entry, cashboxId: 'caixa_operacional' }
+      return { ...entry, cashboxId: 'caixa_producao' }
     }
     return entry
   })
   const caixas = ensureArray(data.caixas, DEFAULT_CASHBOXES.map((cashbox) => ({ ...cashbox })))
+  const physicalCashBalance = typeof data.physicalCashBalance === 'number' ? data.physicalCashBalance : 0
   const conferenciasCaixaFisico = ensureArray(data.conferenciasCaixaFisico, [])
   const pdvCaixas = ensureArray(data.pdvCaixas, [])
   const pdvMovimentacoes = ensureArray(data.pdvMovimentacoes, [])
@@ -1332,6 +1333,7 @@ const normalizeData = (data: ERPData) => {
     manutencoes,
     financeiro,
     caixas,
+    physicalCashBalance,
     conferenciasCaixaFisico,
     pdvCaixas,
     pdvMovimentacoes,
